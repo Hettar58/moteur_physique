@@ -69,9 +69,9 @@ class Objet:
         if int(self.y) >= hauteur_ecran-30:
             self.vy = -self.vy * 0.80
             self.vx = self.vx * 0.80
-        if int(self.x + 22) >= bloc.x and 540 < self.y < 590 :
+        if int(self.x + 21) >= bloc.x and bloc.y < self.y < bloc.y + 50 :
             self.vx = -self.vx
-        if int(self.y + 22) >= bloc.y and 600 < self.x < 650 :
+        if int(self.y + 21) >= bloc.y and bloc.x < self.x < bloc.x + 50 :
             self.vy = -self.vy
             
     def eventScan(self):
