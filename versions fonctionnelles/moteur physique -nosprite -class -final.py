@@ -48,15 +48,15 @@ class Objet:
         self.vy = -velocite * sin(angle)
         self.image = image.load("square.png")
         self.move = True
-       
+        
     def render(self):
         screen.blit(self.image, (self.x, self.y))
-        
+
     def isMouseOnPos(self):
         global mousepos, mousepos_last, mousepos_origin, dx, dy, mouseInPlace, objectToMove
         
         if self.x < mousepos[0] < self.x+ 21 and self.y < mousepos[1] < self.y + 21:
-           self.mouseInPlace = True
+            self.mouseInPlace = True
         else:
             self.mouseInPlace = False
             
@@ -65,10 +65,14 @@ class Objet:
             self.vx += self.ax * dt
             self.vy += self.ay * dt
             self.x += self.vx * dt
-            self.y += self.vy * dt
-        if (int(self.y) >= hauteur_ecran-30):
+            self.y += self.vy * dt           
+        if int(self.y) >= hauteur_ecran-30:
             self.vy = -self.vy * 0.80
             self.vx = self.vx * 0.80
+        if int(self.x + 22) >= bloc.x and 540 < self.y < 590 :
+            self.vx = -self.vx
+        if int(self.y + 22) >= bloc.y and 600 < self.x < 650 :
+            self.vy = -self.vy
             
     def eventScan(self):
         global mousepos, mousepos_last, mousepos_origin, dx, dy, mouseInPlace, objectToMove, clic, capture
@@ -92,7 +96,18 @@ class Objet:
             capture = True
         elif evenement.type == MOUSEMOTION and self.move == False and clic == True:
             self.x = mousepos[0]
-            self.y = mousepos[1]       
+            self.y = mousepos[1]
+            
+class Bloc:
+    def __init__(self):
+        self.x = 600
+        self.y = 540
+        self.texture = image.load("square.png")
+        self.image = transform.smoothscale(self.texture, (50, 50))
+        
+    def render(self):
+        screen.blit(self.image, (self.x, self.y))
+        
 #/CLASS ----------------------------------
         
 #TEXTURES --------------------------------
@@ -103,10 +118,12 @@ ground = image.load("ground_texture.png")
 screen.blit(ground, (0, hauteur_ecran -10))
 #/TEXTURES -------------------------------
 
-#MAIN LOOP -------------------------------
 
-box = Objet(0, 20, hauteur_ecran - 30, 80*3.14/180, 10, 280)
-box2 = Objet(1, 30,  hauteur_ecran -40, 50*3.14/180, 5, 250)
+#MAIN LOOP -------------------------------
+#--- = objet (numéro, posX, posY, angle, masse, vélocité)
+box = Objet(0, 20, hauteur_ecran - 30, 45*3.14/180, 10, 250)
+box2 = Objet(1, 30,  hauteur_ecran -40, 50*3.14/180, 10, 250)
+bloc = Bloc()
 
 continuer = True
 while continuer == True:
@@ -143,6 +160,7 @@ while continuer == True:
     screen.blit(ground, (0, hauteur_ecran -10))
     box.render()
     box2.render()
+    bloc.render()
     display.flip()
     #/RENDER ----------------------------
 
