@@ -5,6 +5,7 @@ from pygame import *
 from pygame.locals import *
 from math import *
 import sys
+import string
 #/IMPORTS ---------------------------------------
 
 
@@ -15,28 +16,12 @@ height = 600
 screen = display.set_mode([width, height], 0, 32)
 #/INIT --------------------------------------------
 
-#VARS_GENERAL -------------------------------------
-t = time.get_ticks()                #temps de rendu de la frame actuelle
-t_o = time.get_ticks()              #temps de la frame d'avant
-clock = time.Clock()                #horloge
-g = 9.81                            #gravité terrestre
-dx = 0                              #différence entre le X d'origine de la souris et celui d'arrivée
-dy = 0                              #différence entre le Y d'origine de la souris et celui d'arrivée
-mousepos_origin = []                #position de la souris à l'origine
-mousepos_last = []                  #dernière position de la souris
-mouseInPlace = False                #est ce que la souris est dans la boite ?
-move = True                         #est ce que le bloc peut bouger ?
-clic = False                        #est ce que un bouton de la souris est appuyé ?
-capture = True                      #est ce que l'on peut prendre la psition de la souris ?
-hauteur_ecran = screen.get_height() #la hauteur de l'écran
-#/VARS_GENERAL ------------------------------------
-
 #CLASS -----------------------------------
 class Objet:
-    def __init__(self, number, x, y, angle, masse, velocite):
-        global mousepos, mousepos_last, mousepos_origin, dx, dy, mouseInPlace, objectToMove
+    def __init__(self, x, y, angle, masse, velocite):
+        global mousepos, mousepos_last, mousepos_origin, dx, dy, mouseInPlace, objectToMove, allBoxes, nbBoites
         
-        self.number = number
+        nbBoites += 1
         self.x = x
         self.y = y #screen.get_height() - 30
         self.angle = angle
@@ -48,6 +33,7 @@ class Objet:
         self.vy = -velocite * sin(angle)
         self.image = image.load("square.png")
         self.move = True
+        allBoxes.append(self)
         
     def render(self):
         screen.blit(self.image, (self.x, self.y))
@@ -61,6 +47,8 @@ class Objet:
             self.mouseInPlace = False
             
     def moveBox(self):
+        global allBlocs, allBoxes
+        
         if self.move == True:
             self.vx += self.ax * dt
             self.vy += self.ay * dt
@@ -69,15 +57,28 @@ class Objet:
         if int(self.y) >= hauteur_ecran-30:
             self.vy = -self.vy * 0.80
             self.vx = self.vx * 0.80
-        if int(self.x + 21) >= bloc.x and bloc.y < self.y < bloc.y + 50 :
-            self.vx = -self.vx
-        if int(self.y + 21) >= bloc.y and bloc.x < self.x < bloc.x + 50 :
-            self.vy = -self.vy
+            
+        # Détéction de collisions -----------------------------------------------------------------------
+        f = 0
+        while f < len(allBlocs):
+            if int(self.x + 21) >= allBlocs[f].x and allBlocs[f].y < self.y < allBlocs[f].y + 50 :
+                self.vx = -self.vx
+            if int(self.y + 21) >= allBlocs[f].y and allBlocs[f].x < self.x < allBlocs[f].x + 50 :
+                self.vy = -self.vy
+            f += 1
+            
+        f = 0
+        while f < len(allBoxes):
+            if int(self.x + 21) >= allBoxes[f].x and allBoxes[f].y < self.y < allBoxes[f].y + 20 :
+                self.vx = -self.vx
+            if int(self.y + 21) >= allBoxes[f].y and allBoxes[f].x < self.x < allBoxes[f].x + 20 :
+                self.vy = -self.vy
+            f += 1
             
     def eventScan(self):
         global mousepos, mousepos_last, mousepos_origin, dx, dy, mouseInPlace, objectToMove, clic, capture
         
-        if evenement.type == MOUSEBUTTONDOWN and self.mouseInPlace == True and box2.move == True:
+        if evenement.type == MOUSEBUTTONDOWN and self.mouseInPlace == True:
             self.move = False
             clic = True
             if capture == True:
@@ -99,17 +100,37 @@ class Objet:
             self.y = mousepos[1]
             
 class Bloc:
-    def __init__(self):
-        self.x = 600
-        self.y = 540
+    def __init__(self, x, y):
+        global allBlocs, nbBlocs
+        
+        nbBlocs += 1
+        allBlocs.append(self)
+        self.x = x
+        self.y = y
         self.texture = image.load("square.png")
         self.image = transform.smoothscale(self.texture, (50, 50))
         
     def render(self):
         screen.blit(self.image, (self.x, self.y))
-        
-#/CLASS ----------------------------------
-        
+
+#VARS_GENERAL -------------------------------------
+clock = time.Clock()                #horloge
+g = 9.81                            #gravité terrestre
+dx = 0                              #différence entre le X d'origine de la souris et celui d'arrivée
+dy = 0                              #différence entre le Y d'origine de la souris et celui d'arrivée
+mousepos_origin = []                #position de la souris à l'origine
+mousepos_last = []                  #dernière position de la souris
+mouseInPlace = False                #est ce que la souris est dans la boite ?
+move = True                         #est ce que le bloc peut bouger ?
+clic = False                        #est ce que un bouton de la souris est appuyé ?
+capture = True                      #est ce que l'on peut prendre la psition de la souris ?
+hauteur_ecran = screen.get_height() #la hauteur de l'écran
+nbBoites = 0
+nbBlocs = 0
+allBoxes = []
+allBlocs = []
+#/VARS_GENERAL ------------------------------------
+      
 #TEXTURES --------------------------------
 blanc = (255, 255, 255)
 screen.fill(blanc)
@@ -120,18 +141,21 @@ screen.blit(ground, (0, hauteur_ecran -10))
 
 
 #MAIN LOOP -------------------------------
-#--- = objet (numéro, posX, posY, angle, masse, vélocité)
-box = Objet(0, 20, hauteur_ecran - 30, 45*3.14/180, 10, 250)
-box2 = Objet(1, 30,  hauteur_ecran -40, 50*3.14/180, 10, 250)
-bloc = Bloc()
+#--- = objet (posX, posY, angle, masse, vélocité)
+box = Objet(20, hauteur_ecran - 30, 45*3.14/180, 10, 250)
+box2 = Objet(50,  hauteur_ecran -40, 50*3.14/180, 10, 250)
+box3 = Objet(100, hauteur_ecran - 40, 60*3.14/180, 15, 10)
+bloc = Bloc(600, 540)
 
 continuer = True
 while continuer == True:
     
     mousepos = mouse.get_pos()
     
-    box.isMouseOnPos()
-    box2.isMouseOnPos()
+    i = 0
+    while i < len(allBoxes):
+        allBoxes[i].isMouseOnPos()
+        i += 1
         
     #EVENTS ------------------------------
     for evenement in event.get():
@@ -139,32 +163,63 @@ while continuer == True:
             continuer = False
         elif evenement.type == KEYDOWN and evenement.key == K_ESCAPE:
             continuer = False
-            
-        box.eventScan()
-        box2.eventScan()
+        #génération     
+        elif evenement.type == KEYDOWN and evenement.key == K_c:
+            i_type = str(input("quel type d'objet voulez vous ? (bloc ou objet) \n"))
+            print(i_type)
+            if i_type == "objet":
+                i_posX = int(input("entrez la position X de départ\n"))
+                i_posY = int(input("entrez la position Y de départ\n"))
+                i_angle = int(input("entrez l'angle de l'objet\n"))
+                i_angle *= 3.14/180
+                i_masse = int(input("entrez la masse de l'objet\n"))
+                i_velocite = int(input("entrez la vélocité de l'objet\n"))
+                v = locals()
+                v["box%d" % nbBoites] = Objet(i_posX, i_posY, i_angle, i_masse, i_velocite)
+                time.wait(5000)
+                
+            if i_type == "bloc":
+                i_name = "bloc"+str(nbBlocs)
+                i_posX = int(input("entrez la position X de depart\n"))
+                i_posY = int(input("entrez la position Y de départ\n"))
+                v = locals()
+                v["bloc%d" % nbBlocs] = Bloc(i_posX, i_posY)
+                time.wait(5000)
+    i = 0
+    while i < len(allBoxes):
+        allBoxes[i].eventScan()
+        i += 1
     #/BOX_2-----------------------------------------------------------------------------------------------------------------------------------------------------------------
             
     #/EVENTS -----------------------------
             
     #PROCESSING -------------------------
     clock.tick(60)
-    t = time.get_ticks()
-    dt =  (t - t_o) * 0.001
-    t_o = t
+    dt = 0.016
 
-    box.moveBox()
-    box2.moveBox()
+    i = 0
+    while i < len(allBoxes):
+        allBoxes[i].moveBox()
+        i += 1
         
     #RENDER -----------------------------    
     screen.fill(blanc)
     screen.blit(ground, (0, hauteur_ecran -10))
-    box.render()
-    box2.render()
-    bloc.render()
+    
+    i = 0
+    while i < len(allBoxes):
+        allBoxes[i].render()
+        i += 1
+        
+    f = 0
+    while f < len(allBlocs):
+        allBlocs[f].render()
+        f += 1
+        
     display.flip()
     #/RENDER ----------------------------
 
-    print(box.move, box2.move, clic, capture, box.mouseInPlace, box2.mouseInPlace)         #DEBUG 
+             #DEBUG 
     
     #/PROCESSING -------------------------
     
