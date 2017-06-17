@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 
+# Première version du moteur.
+# N'utilise pas les classes pour les objets.
+# Blocs inexistants
+
+
 #IMPORTS ---------------------------------
 from pygame import *
 from pygame.locals import *
